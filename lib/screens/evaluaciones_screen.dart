@@ -77,7 +77,10 @@ class _EvaluacionesScreenState extends State<EvaluacionesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Evaluaciones · ${widget.materia.nombre}')),
+      appBar: AppBar(
+          title: TituloSeccion(
+              icono: Icons.assignment,
+              texto: 'Notas · ${widget.materia.nombre}')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _abrirFormulario(),
         icon: const Icon(Icons.add),
@@ -189,9 +192,8 @@ class _EvaluacionDialogState extends State<_EvaluacionDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.evaluacion == null
-          ? 'Nueva evaluación'
-          : 'Editar evaluación'),
+      title: Text(
+          widget.evaluacion == null ? 'Nueva evaluación' : 'Editar evaluación'),
       content: Form(
         key: _formKey,
         child: Column(

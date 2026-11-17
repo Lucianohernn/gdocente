@@ -9,8 +9,8 @@ import '../services/excel_service.dart';
 import '../services/resumen_academico.dart';
 import '../services/resumen_service.dart';
 import '../services/servicio_exception.dart';
+import '../utils/app_tema.dart';
 import '../utils/formato.dart';
-import '../utils/telefono.dart';
 import '../widgets/mensaje_whatsapp_dialog.dart';
 import '../widgets/ui_helpers.dart';
 import 'alumno_form_screen.dart';
@@ -49,7 +49,8 @@ class _AlumnosScreenState extends State<AlumnosScreen> {
 
   Future<void> _cargar() async {
     final datos = await _service.listarActivos(widget.materia.id!);
-    final resumenes = await _resumenService.deMateria(widget.materia.id!, datos);
+    final resumenes =
+        await _resumenService.deMateria(widget.materia.id!, datos);
     if (!mounted) return;
     setState(() {
       _alumnos = datos;
@@ -125,17 +126,16 @@ class _AlumnosScreenState extends State<AlumnosScreen> {
     }
   }
 
-  String _detalle(AlumnoModel a) {
-    final r = _resumenes[a.id];
-    final partes = [
-      Telefono.formatear(a.telefono),
-      if (r?.porcentajeAsistencia != null)
-        'Asist. ${Formato.porcentaje(r!.porcentajeAsistencia!)}',
-      if (r?.promedio != null) 'Prom. ${Formato.nota(r!.promedio!)}',
-      if (r != null && r.aRecuperar.isNotEmpty)
-        '${r.aRecuperar.length} a recuperar',
-    ];
-    return partes.join(' · ');
+  /// Aviso para el docente: "Asistencia baja", "Recupera Parcial 2"...
+  /// null si el alumno está al día.
+  static String? _aviso(ResumenAcademico? r) {
+    if (r == null || !r.enRiesgo) return null;
+    final recuperar = r.aRecuperar.map((n) => n.evaluacion).toList();
+    return [
+      if (r.asistenciaBaja) 'Asistencia baja',
+      if (recuperar.length == 1) 'Recupera ${recuperar.first}',
+      if (recuperar.length > 1) 'Recupera ${recuperar.length} evaluaciones',
+    ].join(' · ');
   }
 
   List<AlumnoModel> get _filtrados {
@@ -143,7 +143,8 @@ class _AlumnosScreenState extends State<AlumnosScreen> {
     final f = _filtro.toLowerCase();
     return _alumnos
         .where((a) =>
-            a.nombreCompleto.toLowerCase().contains(f) || a.telefono.contains(f))
+            a.nombreCompleto.toLowerCase().contains(f) ||
+            a.telefono.contains(f))
         .toList();
   }
 
@@ -194,28 +195,32 @@ class _AlumnosScreenState extends State<AlumnosScreen> {
 
   Future<void> _whatsapp(AlumnoModel alumno) async {
     await mostrarMensajeWhatsApp(context,
-        alumno: alumno, materia: widget.materia, resumen: _resumenes[alumno.id]);
+        alumno: alumno,
+        materia: widget.materia,
+        resumen: _resumenes[alumno.id]);
   }
 
   @override
   Widget build(BuildContext context) {
     final lista = _filtrados;
+    final app = ColoresApp.of(context);
+    final oscuro = Theme.of(context).brightness == Brightness.dark;
+    final enRiesgo =
+        _alumnos.where((a) => _resumenes[a.id]?.enRiesgo ?? false).length;
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.materia.nombre),
+        toolbarHeight: 72,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('${widget.materia.anio}° año',
+                style: const TextStyle(fontSize: 13, color: Colors.white70)),
+            Text(widget.materia.nombre),
+          ],
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.fact_check_outlined),
-            tooltip: 'Asistencia',
-            onPressed: () => _abrir(AsistenciaScreen(materia: widget.materia)),
-          ),
-          IconButton(
-            icon: const Icon(Icons.assignment_outlined),
-            tooltip: 'Evaluaciones y notas',
-            onPressed: () =>
-                _abrir(EvaluacionesScreen(materia: widget.materia)),
-          ),
           PopupMenuButton<String>(
+            tooltip: 'Excel',
             onSelected: (op) =>
                 op == 'exportar' ? _exportarExcel() : _importarExcel(),
             itemBuilder: (_) => const [
@@ -239,25 +244,33 @@ class _AlumnosScreenState extends State<AlumnosScreen> {
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(64),
+          preferredSize: const Size.fromHeight(56),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-            child: TextField(
-              controller: _buscarCtrl,
-              onChanged: (v) => setState(() => _filtro = v.trim()),
-              decoration: InputDecoration(
-                hintText: 'Buscar alumno',
-                prefixIcon: const Icon(Icons.search),
-                isDense: true,
-                suffixIcon: _filtro.isEmpty
-                    ? null
-                    : IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _buscarCtrl.clear();
-                          setState(() => _filtro = '');
-                        },
-                      ),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: SizedBox(
+              height: 44,
+              child: TextField(
+                controller: _buscarCtrl,
+                onChanged: (v) => setState(() => _filtro = v.trim()),
+                style:
+                    TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: oscuro ? app.panel : Paleta.marfil,
+                  hintText: 'Buscar alumno',
+                  prefixIcon: const Icon(Icons.search),
+                  contentPadding: EdgeInsets.zero,
+                  suffixIcon: _filtro.isEmpty
+                      ? null
+                      : IconButton(
+                          icon: const Icon(Icons.clear),
+                          tooltip: 'Borrar búsqueda',
+                          onPressed: () {
+                            _buscarCtrl.clear();
+                            setState(() => _filtro = '');
+                          },
+                        ),
+                ),
               ),
             ),
           ),
@@ -268,52 +281,221 @@ class _AlumnosScreenState extends State<AlumnosScreen> {
         icon: const Icon(Icons.person_add),
         label: const Text('Alumno'),
       ),
-      body: _cargando
-          ? const Center(child: CircularProgressIndicator())
-          : _alumnos.isEmpty
-              ? const EstadoVacio(
-                  icono: Icons.groups_outlined,
-                  titulo: 'Sin alumnos',
-                  detalle: 'Agregá los alumnos de esta materia con "+ Alumno".',
-                )
-              : lista.isEmpty
-                  ? const EstadoVacio(
-                      icono: Icons.search_off,
-                      titulo: 'Sin resultados',
-                      detalle: 'No hay alumnos que coincidan con la búsqueda.',
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.only(bottom: 88),
-                      itemCount: lista.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
-                      itemBuilder: (_, i) {
-                        final a = lista[i];
-                        return ListTile(
-                          leading: CircleAvatar(
-                            child: Text(a.nombreCompleto[0].toUpperCase()),
-                          ),
-                          title: Text(a.nombreCompleto),
-                          subtitle: Text(_detalle(a)),
-                          onTap: () => _abrirFormulario(a),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.chat),
-                                color: const Color(0xFF25D366),
-                                tooltip: 'Mensaje por WhatsApp',
-                                onPressed: () => _whatsapp(a),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.person_remove_outlined),
-                                tooltip: 'Dar de baja',
-                                onPressed: () => _darDeBaja(a),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Accesos grandes y con nombre a las dos tareas más usadas.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: BotonSeccion(
+                    icono: Icons.fact_check_outlined,
+                    texto: 'Asistencia',
+                    onTap: () =>
+                        _abrir(AsistenciaScreen(materia: widget.materia)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: BotonSeccion(
+                    icono: Icons.assignment_outlined,
+                    texto: 'Notas',
+                    onTap: () =>
+                        _abrir(EvaluacionesScreen(materia: widget.materia)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (!_cargando && _alumnos.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: Text.rich(
+                TextSpan(children: [
+                  TextSpan(
+                      text: _alumnos.length == 1
+                          ? '1 alumno'
+                          : '${_alumnos.length} alumnos'),
+                  if (enRiesgo > 0) ...[
+                    const TextSpan(text: ' · '),
+                    TextSpan(
+                      text: '$enRiesgo en riesgo',
+                      style: TextStyle(
+                          color: app.riesgo, fontWeight: FontWeight.w500),
                     ),
+                  ],
+                ]),
+                style: TextStyle(fontSize: 14, color: app.textoSecundario),
+              ),
+            ),
+          Expanded(child: _lista(lista)),
+        ],
+      ),
+    );
+  }
+
+  Widget _lista(List<AlumnoModel> lista) {
+    if (_cargando) return const Center(child: CircularProgressIndicator());
+    if (_alumnos.isEmpty) {
+      return const EstadoVacio(
+        icono: Icons.groups_outlined,
+        titulo: 'Sin alumnos',
+        detalle: 'Agregá los alumnos de esta materia con "+ Alumno".',
+      );
+    }
+    if (lista.isEmpty) {
+      return const EstadoVacio(
+        icono: Icons.search_off,
+        titulo: 'Sin resultados',
+        detalle: 'No hay alumnos que coincidan con la búsqueda.',
+      );
+    }
+    final app = ColoresApp.of(context);
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 96),
+      children: [
+        DecoratedBox(
+          decoration: app.panelDecoracion(16),
+          child: Column(
+            children: [
+              for (var i = 0; i < lista.length; i++) ...[
+                if (i > 0) const Divider(height: 1, indent: 64),
+                FilaAlumno(
+                  alumno: lista[i],
+                  resumen: _resumenes[lista[i].id],
+                  aviso: _aviso(_resumenes[lista[i].id]),
+                  onTap: () => _abrirFormulario(lista[i]),
+                  onWhatsApp: () => _whatsapp(lista[i]),
+                  onBaja: () => _darDeBaja(lista[i]),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Fila de alumno: nombre, barra de asistencia con la marca del mínimo,
+/// porcentaje y promedio alineados, y aviso si necesita atención.
+class FilaAlumno extends StatelessWidget {
+  final AlumnoModel alumno;
+  final ResumenAcademico? resumen;
+  final String? aviso;
+  final VoidCallback onTap;
+  final VoidCallback onWhatsApp;
+  final VoidCallback onBaja;
+
+  const FilaAlumno({
+    super.key,
+    required this.alumno,
+    required this.resumen,
+    required this.aviso,
+    required this.onTap,
+    required this.onWhatsApp,
+    required this.onBaja,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final app = ColoresApp.of(context);
+    final tema = Theme.of(context);
+    final riesgo = aviso != null;
+    final pct = resumen?.porcentajeAsistencia;
+    final promedio = resumen?.promedio;
+    const cifras = [FontFeature.tabularFigures()];
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 12, 0, 12),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: riesgo ? app.riesgoSuave : app.marcaSuave,
+              child: Text(
+                alumno.nombreCompleto[0].toUpperCase(),
+                style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: riesgo ? app.riesgo : app.marca),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(alumno.nombreCompleto,
+                      style: tema.textTheme.bodyLarge,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                  if (pct != null) ...[
+                    const SizedBox(height: 8),
+                    BarraAsistencia(
+                        porcentaje: pct, baja: resumen!.asistenciaBaja),
+                  ],
+                  if (aviso != null) ...[
+                    const SizedBox(height: 4),
+                    Text(aviso!,
+                        style: TextStyle(
+                            fontSize: 13,
+                            color: app.riesgo,
+                            fontWeight: FontWeight.w500)),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Ancho fijo: así las barras y la marca del mínimo quedan
+            // alineadas en todas las filas.
+            SizedBox(
+              width: 72,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(pct == null ? '–' : Formato.porcentaje(pct),
+                      style: tema.textTheme.bodyLarge
+                          ?.copyWith(fontFeatures: cifras)),
+                  Text(
+                    promedio == null
+                        ? 'Sin notas'
+                        : 'Prom. ${Formato.nota(promedio)}',
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: app.textoSecundario,
+                        fontFeatures: cifras),
+                    maxLines: 1,
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.chat),
+              color: const Color(0xFF25D366),
+              tooltip: 'Mensaje por WhatsApp',
+              onPressed: onWhatsApp,
+            ),
+            PopupMenuButton<String>(
+              tooltip: 'Más opciones',
+              onSelected: (_) => onBaja(),
+              itemBuilder: (_) => const [
+                PopupMenuItem(
+                  value: 'baja',
+                  child: ListTile(
+                    leading: Icon(Icons.person_remove_outlined),
+                    title: Text('Dar de baja'),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

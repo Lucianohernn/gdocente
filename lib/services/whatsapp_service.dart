@@ -12,8 +12,11 @@ class WhatsAppService {
   /// Mensaje propuesto. Si hay datos cargados, incluye el resumen individual
   /// (asistencia, promedio y evaluaciones a recuperar). Es lógica pura: no
   /// abre nada, por eso se prueba con pruebas unitarias.
+  ///
+  /// [docente] es el nombre configurado en Ajustes; si está vacío se firma
+  /// "Tu docente".
   String mensajeInicial(AlumnoModel alumno, MateriaModel materia,
-      [ResumenAcademico? resumen]) {
+      [ResumenAcademico? resumen, String docente = '']) {
     final nombre = alumno.nombreCompleto.split(' ').first;
     final texto = StringBuffer('Hola $nombre! Te escribo por la materia '
         '${materia.nombre} (${materia.anio}° año).\n\n');
@@ -41,7 +44,8 @@ class WhatsAppService {
       texto.writeln();
     }
 
-    texto.write('Saludos,\nTu docente');
+    final firma = docente.trim().isEmpty ? 'Tu docente' : docente.trim();
+    texto.write('Saludos,\n$firma');
     return texto.toString();
   }
 

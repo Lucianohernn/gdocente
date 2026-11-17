@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/alumno_model.dart';
 import '../models/materia_model.dart';
+import '../services/ajustes_service.dart';
 import '../services/resumen_academico.dart';
 import '../services/servicio_exception.dart';
 import '../services/whatsapp_service.dart';
@@ -18,7 +19,8 @@ Future<void> mostrarMensajeWhatsApp(
 }) async {
   final service = WhatsAppService();
   final ctrl = TextEditingController(
-      text: service.mensajeInicial(alumno, materia, resumen));
+      text: service.mensajeInicial(
+          alumno, materia, resumen, AjustesService.instancia.nombreDocente));
 
   final enviar = await showDialog<bool>(
     context: context,

@@ -140,7 +140,8 @@ class _AsistenciaScreenState extends State<AsistenciaScreen> {
       await _service.guardarDia(_dia, _estados);
       await _cargar();
       if (!mounted) return;
-      mostrarMensaje(context, 'Asistencia del ${Formato.fecha(Formato.fechaIso(_dia))} guardada');
+      mostrarMensaje(context,
+          'Asistencia del ${Formato.fecha(Formato.fechaIso(_dia))} guardada');
     } on ServicioException catch (e) {
       if (!mounted) return;
       mostrarMensaje(context, e.mensaje, error: true);
@@ -196,7 +197,8 @@ class _AsistenciaScreenState extends State<AsistenciaScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Asistencia'),
+          title:
+              const TituloSeccion(icono: Icons.fact_check, texto: 'Asistencia'),
           actions: [
             IconButton(
               icon: const Icon(Icons.history),
@@ -206,7 +208,8 @@ class _AsistenciaScreenState extends State<AsistenciaScreen> {
             PopupMenuButton<String>(
               onSelected: (op) => op == 'borrar' ? _borrarDia() : null,
               itemBuilder: (_) => const [
-                PopupMenuItem(value: 'borrar', child: Text('Borrar esta clase')),
+                PopupMenuItem(
+                    value: 'borrar', child: Text('Borrar esta clase')),
               ],
             ),
           ],
@@ -218,6 +221,9 @@ class _AsistenciaScreenState extends State<AsistenciaScreen> {
                 backgroundColor: _cambios
                     ? null
                     : Theme.of(context).colorScheme.surfaceContainerHighest,
+                foregroundColor: _cambios
+                    ? null
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
                 icon: _guardando
                     ? const SizedBox.square(
                         dimension: 20,
@@ -283,8 +289,8 @@ class _AsistenciaScreenState extends State<AsistenciaScreen> {
           child: Row(
             children: [
               Expanded(
-                child: Text(_conteo,
-                    style: Theme.of(context).textTheme.bodySmall),
+                child:
+                    Text(_conteo, style: Theme.of(context).textTheme.bodySmall),
               ),
               TextButton.icon(
                 onPressed: _todosPresentes,
@@ -373,14 +379,17 @@ class _SelectorEstado extends StatelessWidget {
                     shape: BoxShape.circle,
                     color: estado == e ? _color(e, colores) : null,
                     border: Border.all(
-                      color: estado == e ? _color(e, colores) : colores.outlineVariant,
+                      color: estado == e
+                          ? _color(e, colores)
+                          : colores.outlineVariant,
                     ),
                   ),
                   child: Text(
                     e.codigo,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: estado == e ? Colors.white : colores.onSurfaceVariant,
+                      color:
+                          estado == e ? Colors.white : colores.onSurfaceVariant,
                     ),
                   ),
                 ),

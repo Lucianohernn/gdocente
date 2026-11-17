@@ -14,6 +14,9 @@ import '../models/nota_model.dart';
 class ResumenAcademico {
   static const double notaAprobacion = 6;
 
+  /// Asistencia mínima para mantener la regularidad (en %).
+  static const double asistenciaMinima = 75;
+
   final int presentes;
   final int ausentes;
   final int tardes;
@@ -34,9 +37,8 @@ class ResumenAcademico {
   int get clasesAsistidas => presentes + tardes;
 
   /// null si todavía no hay clases registradas.
-  double? get porcentajeAsistencia => clasesComputables == 0
-      ? null
-      : clasesAsistidas * 100 / clasesComputables;
+  double? get porcentajeAsistencia =>
+      clasesComputables == 0 ? null : clasesAsistidas * 100 / clasesComputables;
 
   double? get promedio => notas.isEmpty
       ? null
@@ -45,7 +47,17 @@ class ResumenAcademico {
   List<NotaDeEvaluacion> get aRecuperar =>
       notas.where((n) => n.notaFinal < notaAprobacion).toList();
 
-  bool get sinDatos => clasesComputables == 0 && justificadas == 0 && notas.isEmpty;
+  /// Por debajo del mínimo de regularidad (false si no hay clases todavía).
+  bool get asistenciaBaja {
+    final pct = porcentajeAsistencia;
+    return pct != null && pct < asistenciaMinima;
+  }
+
+  /// Necesita atención del docente: asistencia baja o algo para recuperar.
+  bool get enRiesgo => asistenciaBaja || aRecuperar.isNotEmpty;
+
+  bool get sinDatos =>
+      clasesComputables == 0 && justificadas == 0 && notas.isEmpty;
 
   /// Arma el resumen de UN alumno a partir de sus registros.
   factory ResumenAcademico.calcular({

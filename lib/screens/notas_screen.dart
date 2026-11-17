@@ -17,7 +17,8 @@ class NotasScreen extends StatefulWidget {
   final MateriaModel materia;
   final EvaluacionModel evaluacion;
 
-  const NotasScreen({super.key, required this.materia, required this.evaluacion});
+  const NotasScreen(
+      {super.key, required this.materia, required this.evaluacion});
 
   @override
   State<NotasScreen> createState() => _NotasScreenState();
@@ -59,7 +60,8 @@ class _NotasScreenState extends State<NotasScreen> {
       for (final a in alumnos) {
         final n = notas[a.id];
         _notaCtrl[a.id!] = TextEditingController(text: texto(n?.nota));
-        _recupCtrl[a.id!] = TextEditingController(text: texto(n?.recuperatorio));
+        _recupCtrl[a.id!] =
+            TextEditingController(text: texto(n?.recuperatorio));
       }
       _cargando = false;
     });
@@ -113,7 +115,8 @@ class _NotasScreenState extends State<NotasScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(widget.evaluacion.nombre),
+          title: TituloSeccion(
+              icono: Icons.assignment, texto: widget.evaluacion.nombre),
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(24),
             child: Padding(
@@ -121,7 +124,10 @@ class _NotasScreenState extends State<NotasScreen> {
               child: Text(
                 '${widget.materia.nombre} · ${Formato.fecha(widget.evaluacion.fecha)}'
                 ' · Aprueba con ${Formato.nota(ResumenAcademico.notaAprobacion)}',
-                style: Theme.of(context).textTheme.bodySmall,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: Colors.white70),
               ),
             ),
           ),
@@ -133,6 +139,9 @@ class _NotasScreenState extends State<NotasScreen> {
                 backgroundColor: _cambios
                     ? null
                     : Theme.of(context).colorScheme.surfaceContainerHighest,
+                foregroundColor: _cambios
+                    ? null
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
                 icon: const Icon(Icons.save),
                 label: Text(_cambios ? 'Guardar' : 'Guardado'),
               ),
@@ -199,7 +208,8 @@ class _NotasScreenState extends State<NotasScreen> {
           const SizedBox(width: 8),
           SizedBox(
               width: 72,
-              child: Text('Recup.', style: estilo, textAlign: TextAlign.center)),
+              child:
+                  Text('Recup.', style: estilo, textAlign: TextAlign.center)),
         ],
       ),
     );

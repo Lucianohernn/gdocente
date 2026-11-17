@@ -5,6 +5,7 @@ import '../models/carrera_model.dart';
 import '../models/materia_model.dart';
 import '../services/materia_service.dart';
 import '../services/servicio_exception.dart';
+import '../utils/app_tema.dart';
 import '../widgets/ui_helpers.dart';
 import 'alumnos_screen.dart';
 
@@ -99,7 +100,10 @@ class _MateriasScreenState extends State<MateriasScreen> {
                   itemBuilder: (_, i) {
                     final m = _materias[i];
                     return ListTile(
-                      leading: CircleAvatar(child: Text('${m.anio}°')),
+                      leading: CircleAvatar(
+                          backgroundColor: ColoresApp.of(context).marcaSuave,
+                          foregroundColor: ColoresApp.of(context).marca,
+                          child: Text('${m.anio}°')),
                       title: Text(m.nombre),
                       subtitle: Text(
                           '${m.anio}° año · ${m.cantidadAlumnos} alumno(s)'),

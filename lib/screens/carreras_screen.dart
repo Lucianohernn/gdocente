@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../models/carrera_model.dart';
 import '../services/carrera_service.dart';
 import '../services/servicio_exception.dart';
+import '../utils/app_tema.dart';
 import '../widgets/ui_helpers.dart';
+import 'ajustes_screen.dart';
 import 'materias_screen.dart';
 
 /// Pantalla inicial: Carrera → Año/Materia → Alumnos.
@@ -72,7 +74,19 @@ class _CarrerasScreenState extends State<CarrerasScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('GDocente · Carreras')),
+      appBar: AppBar(
+        title: const Text('Mis carreras'),
+        actions: [
+          TextButton.icon(
+            style: TextButton.styleFrom(foregroundColor: Colors.white),
+            onPressed: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const AjustesScreen())),
+            icon: const Icon(Icons.settings),
+            label: const Text('Ajustes'),
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _abrirFormulario(),
         icon: const Icon(Icons.add),
@@ -93,7 +107,10 @@ class _CarrerasScreenState extends State<CarrerasScreen> {
                   itemBuilder: (_, i) {
                     final c = _carreras[i];
                     return ListTile(
-                      leading: const CircleAvatar(child: Icon(Icons.school)),
+                      leading: CircleAvatar(
+                          backgroundColor: ColoresApp.of(context).marcaSuave,
+                          foregroundColor: ColoresApp.of(context).marca,
+                          child: const Icon(Icons.school_outlined)),
                       title: Text(c.nombre),
                       subtitle: Text(c.cantidadMaterias == 1
                           ? '1 materia'

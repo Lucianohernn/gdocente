@@ -14,9 +14,12 @@ import 'package:gdocente/utils/formato.dart';
 AsistenciaModel asis(String fecha, EstadoAsistencia e) =>
     AsistenciaModel(alumnoId: 1, fecha: fecha, estado: e);
 
-const parcial1 = EvaluacionModel(id: 1, materiaId: 1, nombre: 'Parcial 1', fecha: '2026-05-10');
-const tp = EvaluacionModel(id: 2, materiaId: 1, nombre: 'TP 1', fecha: '2026-04-01');
-const parcial2 = EvaluacionModel(id: 3, materiaId: 1, nombre: 'Parcial 2', fecha: '2026-06-20');
+const parcial1 = EvaluacionModel(
+    id: 1, materiaId: 1, nombre: 'Parcial 1', fecha: '2026-05-10');
+const tp =
+    EvaluacionModel(id: 2, materiaId: 1, nombre: 'TP 1', fecha: '2026-04-01');
+const parcial2 = EvaluacionModel(
+    id: 3, materiaId: 1, nombre: 'Parcial 2', fecha: '2026-06-20');
 
 void main() {
   group('Asistencia', () {
@@ -35,6 +38,19 @@ void main() {
       expect(r.clasesAsistidas, 3);
       expect(r.clasesComputables, 4);
       expect(r.porcentajeAsistencia, 75);
+    });
+
+    test('75% exacto es regular; menos queda en riesgo', () {
+      const justo = ResumenAcademico(presentes: 3, ausentes: 1);
+      expect(justo.asistenciaBaja, isFalse);
+      expect(justo.enRiesgo, isFalse);
+
+      const bajo = ResumenAcademico(presentes: 2, ausentes: 1);
+      expect(bajo.asistenciaBaja, isTrue);
+      expect(bajo.enRiesgo, isTrue);
+
+      // Sin clases cargadas no se marca riesgo.
+      expect(const ResumenAcademico().enRiesgo, isFalse);
     });
 
     test('sin clases registradas el porcentaje es null', () {
@@ -59,7 +75,8 @@ void main() {
       expect(r.promedio, closeTo(7, 0.001)); // (7 + 9 + 5) / 3
       expect(r.aRecuperar.map((n) => n.evaluacion), ['Parcial 2']);
       // Ordenadas por fecha: TP 1, Parcial 1, Parcial 2
-      expect(r.notas.map((n) => n.evaluacion), ['TP 1', 'Parcial 1', 'Parcial 2']);
+      expect(
+          r.notas.map((n) => n.evaluacion), ['TP 1', 'Parcial 1', 'Parcial 2']);
       expect(r.notas[1].recuperada, isTrue);
     });
 
@@ -117,12 +134,17 @@ void main() {
         nombreCompleto: 'Ana Pérez',
         telefono: '5493794123456',
         fechaAlta: '2026-03-01');
-    const materia = MateriaModel(id: 1, carreraId: 1, nombre: 'Laboratorio II', anio: 2);
+    const materia =
+        MateriaModel(id: 1, carreraId: 1, nombre: 'Laboratorio II', anio: 2);
     final service = WhatsAppService();
 
     test('sin datos, mensaje simple', () {
-      final m = service.mensajeInicial(alumno, materia, const ResumenAcademico());
-      expect(m, startsWith('Hola Ana! Te escribo por la materia Laboratorio II (2° año).'));
+      final m =
+          service.mensajeInicial(alumno, materia, const ResumenAcademico());
+      expect(
+          m,
+          startsWith(
+              'Hola Ana! Te escribo por la materia Laboratorio II (2° año).'));
       expect(m, isNot(contains('situación')));
     });
 
@@ -143,6 +165,12 @@ void main() {
       expect(m, contains('• Promedio: 6'));
       expect(m, contains('• A recuperar: Parcial 2 (4)'));
       expect(m, endsWith('Saludos,\nTu docente'));
+    });
+
+    test('firma con el nombre del docente si está configurado', () {
+      final m = service.mensajeInicial(
+          alumno, materia, const ResumenAcademico(), '  Prof. María Gómez ');
+      expect(m, endsWith('Saludos,\nProf. María Gómez'));
     });
   });
 }
