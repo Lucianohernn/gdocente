@@ -191,4 +191,9 @@ La asistencia de un día y la planilla de notas se guardan en **una sola transac
 
 ## Alcance
 
-La **versión para Windows** prevista en el Hito 1 queda fuera del proyecto: compilar para escritorio requiere instalar Visual Studio con "Desarrollo para el escritorio con C++" (unos 8 GB), y no hay espacio disponible en la PC de desarrollo. Como respaldo y para trabajar los datos en la computadora se usa la **exportación a Excel**.
+Desde la versión 1.3.0 GDocente también corre en **Windows** (la versión de escritorio prevista en el Hito 1):
+
+- Se compila con `flutter build windows --release` (requiere Visual Studio con "Desarrollo para el escritorio con C++"). El ejecutable queda en `build\windows\x64\runner\Release\gdocente.exe`.
+- La base SQLite usa `sqflite_common_ffi` y se guarda en `%APPDATA%\Hermann Luciano\GDocente\gdocente.db`. Esa carpeta sale de `CompanyName` y `ProductName` en `windows/runner/Runner.rc`: si se cambian, la app deja de encontrar los datos ya cargados.
+- Exportar a Excel abre la ventana "Guardar como" de Windows en lugar del menú de compartir del celular.
+- Los datos de la notebook y del celular son independientes; para pasarlos de un equipo al otro se usa la exportación/importación de Excel.

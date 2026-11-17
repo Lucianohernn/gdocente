@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
@@ -70,6 +72,20 @@ class _AlumnosScreenState extends State<AlumnosScreen> {
       final archivo = await _excelService.exportarMateria(widget.materia);
       if (!mounted) return;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      if (Platform.isWindows) {
+        // En la notebook no hay menú de compartir: ventana "Guardar como".
+        final destino = await FilePicker.saveFile(
+          dialogTitle: 'Guardar Excel',
+          fileName: archivo.uri.pathSegments.last,
+          bytes: await archivo.readAsBytes(),
+          mimeType:
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        );
+        if (destino != null && mounted) {
+          mostrarMensaje(context, 'Excel guardado');
+        }
+        return;
+      }
       // Abre el menú de Android para guardarlo (Drive, Archivos) o enviarlo.
       await SharePlus.instance.share(ShareParams(
         files: [XFile(archivo.path)],

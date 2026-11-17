@@ -1,5 +1,10 @@
+import 'dart:io';
+
 import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart'
+    show databaseFactoryFfi, sqfliteFfiInit;
 
 /// Administra la única conexión a SQLite de la aplicación (patrón Singleton).
 class AppDatabase {
@@ -7,7 +12,8 @@ class AppDatabase {
   static Database? _database;
 
   static const String _nombreArchivo = 'gdocente.db';
-  static const int _version = 2; // v2 (Hito 3): asistencias, evaluaciones y notas
+  static const int _version =
+      2; // v2 (Hito 3): asistencias, evaluaciones y notas
 
   AppDatabase._init(); // constructor privado: nadie más puede instanciar la clase
 
@@ -18,7 +24,19 @@ class AppDatabase {
   }
 
   Future<Database> _initDB(String nombreArchivo) async {
-    final dbPath = await getDatabasesPath(); // almacenamiento privado de la app
+    final String dbPath;
+    if (Platform.isWindows) {
+      // En Windows sqflite no trae motor propio: se usa SQLite vía FFI
+      // (sqlite3.dll incluida en el paquete). La base va en
+      // %APPDATA%\Hermann Luciano\GDocente (CompanyName y ProductName de
+      // windows/runner/Runner.rc: no cambiarlos o se pierden los datos).
+      // Es una carpeta del usuario que no se borra al actualizar la app.
+      sqfliteFfiInit();
+      databaseFactory = databaseFactoryFfi;
+      dbPath = (await getApplicationSupportDirectory()).path;
+    } else {
+      dbPath = await getDatabasesPath(); // almacenamiento privado de la app
+    }
     final path = join(dbPath, nombreArchivo);
 
     return openDatabase(
@@ -114,7 +132,8 @@ class AppDatabase {
       )
     ''');
 
-    await db.execute('CREATE INDEX idx_asistencias_fecha ON asistencias(fecha)');
+    await db
+        .execute('CREATE INDEX idx_asistencias_fecha ON asistencias(fecha)');
     await db.execute('CREATE INDEX idx_notas_alumno ON notas(alumno_id)');
   }
 }

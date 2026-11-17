@@ -58,3 +58,6 @@ app.*.map.json
 /android/key.properties
 *.jks
 *.keystore
+
+# Instaladores generados (tools/crear_instalador.ps1)
+/dist/
