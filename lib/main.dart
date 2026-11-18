@@ -1,19 +1,55 @@
+import 'dart:ui' show AppExitResponse;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'screens/bienvenida_screen.dart';
 import 'screens/carreras_screen.dart';
 import 'services/ajustes_service.dart';
+import 'services/backup_service.dart';
 import 'utils/app_tema.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AjustesService.instancia.cargar();
+  await BackupService.instancia.cargar();
   runApp(const GDocenteApp());
 }
 
-class GDocenteApp extends StatelessWidget {
+class GDocenteApp extends StatefulWidget {
   const GDocenteApp({super.key});
+
+  @override
+  State<GDocenteApp> createState() => _GDocenteAppState();
+}
+
+/// Backup automático a Google Drive, una vez por día: al abrir la app, al
+/// volver a ella y, en Windows, al cerrar la ventana (espera a que termine).
+class _GDocenteAppState extends State<GDocenteApp> {
+  late final AppLifecycleListener _ciclo;
+
+  @override
+  void initState() {
+    super.initState();
+    _ciclo = AppLifecycleListener(
+      onResume: BackupService.instancia.automaticoSiCorresponde,
+      onExitRequested: () async {
+        await BackupService.instancia
+            .automaticoSiCorresponde()
+            .timeout(const Duration(seconds: 20), onTimeout: () {});
+        return AppExitResponse.exit;
+      },
+    );
+    // Se deja arrancar la app primero; el backup va después, sin apuro.
+    Future.delayed(const Duration(seconds: 5),
+        BackupService.instancia.automaticoSiCorresponde);
+  }
+
+  @override
+  void dispose() {
+    _ciclo.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

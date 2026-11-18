@@ -23,8 +23,18 @@ class AppDatabase {
     return _database!;
   }
 
-  Future<Database> _initDB(String nombreArchivo) async {
-    final String dbPath;
+  /// Ruta completa del archivo de la base (la usa el backup a Google Drive).
+  Future<String> rutaArchivo() async => join(await _carpeta(), _nombreArchivo);
+
+  /// Cierra la conexión; la próxima consulta la vuelve a abrir. Se usa al
+  /// restaurar un backup, para reemplazar el archivo con la base cerrada.
+  Future<void> cerrar() async {
+    final db = _database;
+    _database = null;
+    await db?.close();
+  }
+
+  Future<String> _carpeta() async {
     if (Platform.isWindows) {
       // En Windows sqflite no trae motor propio: se usa SQLite vía FFI
       // (sqlite3.dll incluida en el paquete). La base va en
@@ -33,11 +43,13 @@ class AppDatabase {
       // Es una carpeta del usuario que no se borra al actualizar la app.
       sqfliteFfiInit();
       databaseFactory = databaseFactoryFfi;
-      dbPath = (await getApplicationSupportDirectory()).path;
-    } else {
-      dbPath = await getDatabasesPath(); // almacenamiento privado de la app
+      return (await getApplicationSupportDirectory()).path;
     }
-    final path = join(dbPath, nombreArchivo);
+    return getDatabasesPath(); // almacenamiento privado de la app
+  }
+
+  Future<Database> _initDB(String nombreArchivo) async {
+    final path = join(await _carpeta(), nombreArchivo);
 
     return openDatabase(
       path,

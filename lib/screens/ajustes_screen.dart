@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../services/ajustes_service.dart';
+import '../widgets/seccion_backup.dart';
 import '../widgets/ui_helpers.dart';
 
-/// Nombre del docente (firma de WhatsApp) y modo de color.
+/// Nombre del docente (firma de WhatsApp), backup en Google Drive y modo de color.
 class AjustesScreen extends StatefulWidget {
   const AjustesScreen({super.key});
 
@@ -61,6 +62,8 @@ class _AjustesScreenState extends State<AjustesScreen> {
                   const Text('Guardar nombre', style: TextStyle(fontSize: 16)),
             ),
           ),
+          const SizedBox(height: 32),
+          const SeccionBackup(),
           const SizedBox(height: 32),
           Text('Colores de la pantalla', style: tema.textTheme.titleLarge),
           const SizedBox(height: 12),

@@ -3,7 +3,7 @@ description: "GDocente - Gestión académica simple para docentes."
 publish_to: 'none'
 
 # 1.3.0 = versión visible · +6 = número interno (debe subir en CADA actualización)
-version: 1.3.0+6
+version: 1.4.0+7
 
 environment:
   sdk: ">=3.5.0 <4.0.0"
@@ -22,6 +22,10 @@ dependencies:
     sdk: flutter
   shared_preferences: ^2.5.6
   sqflite_common_ffi: ^2.4.7  # SQLite en Windows (vía FFI)
+  google_sign_in: ^7.2.0
+  googleapis: ^19.0.0
+  googleapis_auth: ^2.3.7
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:
